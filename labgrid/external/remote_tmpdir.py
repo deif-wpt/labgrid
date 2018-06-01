@@ -16,7 +16,10 @@ import os
 
 class RemoteTmpdir:
 
-    # scriptdir is a directory relative to pytest root
+    # shell   A driver able to do run on target.
+    # basedir A directory relative to pytest root
+    # filetransfer Defaults to shell, but only needs to be able to do filetransfer
+    #              Used if a more efficient filetransfer is used
     def __init__(self, shell, basedir=None, filetransfer=None):
         stdout = shell.run_check("mktemp -d")
         assert len(stdout) == 1
@@ -24,12 +27,12 @@ class RemoteTmpdir:
         if filetransfer is None:
             filetransfer = shell
         self.filetransfer = filetransfer
+        self.shell = shell
         self.basedir = basedir
 
         if self.basedir is not None and os.path.isfile(self.basedir):
             raise Exception("RemoteTmpdir: {} is not a directory".format(
                             self.basedir))
-
 
     ## Copy a file or contents of directory the created tmdir
     # path   file or directory to copy
@@ -56,3 +59,12 @@ class RemoteTmpdir:
             remotepath = self.path + str(path)
             assert localdir or self.basedir, "RemoteTmpdir does not have basedir set, use localdir= in get"
             self.filetransfer.get(remotepath, localdir or self.basedir)
+
+    # Remove the directory again on target.
+    def cleanup(self):
+        # Usually teardown code, thus failure ignored but returned
+        try:
+            self.shell.run_check("rm -r {}".format(self.path))
+            return True
+        except:
+            return False

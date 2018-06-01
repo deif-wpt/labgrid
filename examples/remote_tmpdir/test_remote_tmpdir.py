@@ -12,12 +12,16 @@ import pytest
 from labgrid.external import RemoteTmpdir
 
 
+# scope may also be module or session
 @pytest.fixture(scope='function')
 def remote_tmpdir(target, request):
     # RemoteTmpdir needs to have a Driver which offers put and run
     shell = target.get_active_driver("CommandProtocol")
     # find the relative root of the files to put
-    return RemoteTmpdir(shell, request.fspath.dirname)
+    tmpdir = RemoteTmpdir(shell, request.fspath.dirname)
+    yield tmpdir
+    # Remove the tmpdir again
+    tmpdir.cleanup()
 
 
 def test_hello(remote_tmpdir):

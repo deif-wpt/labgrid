@@ -12,18 +12,29 @@ from labgrid.resource import NetworkService
 
 @pytest.fixture(scope='function')
 def ssh_driver_mocked_and_activated(target, mocker):
-        NetworkService(target, "service", "1.2.3.4", "root")
-        call = mocker.patch('subprocess.call')
-        call.return_value = 0
-        popen = mocker.patch('subprocess.Popen', autospec=True)
-        path = mocker.patch('os.path.exists')
-        path.return_value = True
-        instance_mock = mocker.MagicMock()
-        popen.return_value = instance_mock
-        instance_mock.wait = mocker.MagicMock(return_value=0)
-        SSHDriver(target, "ssh")
-        s = target.get_driver("SSHDriver")
-        return s
+    def dummy():
+        def Popen(cmd, stdout=None, stderr=None):
+            class xx:
+                returncode = 0
+                def communicate(*x):
+                    if "mktemp" in cmd:
+                        return b'/tmp/tmp.aaaa\n', b''
+                    else:
+                        return b'', b''
+            return xx
+        return Popen
+    NetworkService(target, "service", "1.2.3.4", "root")
+    call = mocker.patch('subprocess.call')
+    call.return_value = 0
+    popen = mocker.patch('subprocess.Popen', new_callable=dummy)
+    path = mocker.patch('os.path.exists')
+    path.return_value = True
+    instance_mock = mocker.MagicMock()
+    popen.return_value = instance_mock
+    instance_mock.wait = mocker.MagicMock(return_value=0)
+    SSHDriver(target, "ssh")
+    s = target.get_driver("SSHDriver")
+    return s
 
 
 class TestTmpdir:
