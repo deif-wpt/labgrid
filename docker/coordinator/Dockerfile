@@ -1,11 +1,7 @@
 FROM python:3
+RUN pip install crossbar && \
+    git clone https://github.com/labgrid-project/labgrid /opt/labgrid && \
+    pip install -e /opt/labgrid/ 
 
-RUN git clone https://github.com/labgrid-project/labgrid /opt/labgrid
-RUN cd /opt/labgrid && pip3 install -r crossbar-requirements.txt && python3 setup.py install
-
-RUN echo '#!/bin/bash' > /opt/entry_script.sh
-RUN echo 'cd /opt/labgrid && /usr/local/bin/crossbar start' >> /opt/entry_script.sh
-RUN chmod a+x /opt/entry_script.sh
-ENTRYPOINT ["/opt/entry_script.sh"]
-
-
+WORKDIR /opt/labgrid
+CMD ["crossbar", "start"]
