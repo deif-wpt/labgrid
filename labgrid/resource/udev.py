@@ -49,7 +49,7 @@ class USBResource(ManagedResource):
         self.match.setdefault('SUBSYSTEM', 'usb')
         super().__attrs_post_init__()
 
-    def filter_match(self, device):  # pylint: disable=unused-argument
+    def filter_match(self, device):  # pylint: disable=unused-argument,no-self-use
         return True
 
     def try_match(self, device):
@@ -166,6 +166,11 @@ class USBResource(ManagedResource):
 class USBSerialPort(USBResource, SerialPort):
     def __attrs_post_init__(self):
         self.match['SUBSYSTEM'] = 'tty'
+        if self.port:
+            warnings.warn(
+                "USBSerialPort: The port attribute will be overwritten by udev.\n"
+                "Please use udev matching as described in http://labgrid.readthedocs.io/en/latest/getting_started.html#udev-matching"
+            )
         super().__attrs_post_init__()
 
     def update(self):
